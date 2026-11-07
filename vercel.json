@@ -2,11 +2,19 @@
   "installCommand": "cd frontend && npm ci",
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
+  "regions": [
+    "fra1"
+  ],
   "functions": {
     "api/index.py": {
       "maxDuration": 60,
       "excludeFiles": "{frontend/**,docs/**,backend/planner/tests/**}"
     }
   },
-  "rewrites": [{ "source": "/api/(.*)", "destination": "/api/index" }]
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    }
+  ]
 }
