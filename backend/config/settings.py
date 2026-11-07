@@ -1,8 +1,7 @@
 import os
 import re
+import secrets
 from pathlib import Path
-
-from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIST = Path(os.environ.get("FRONTEND_DIST", BASE_DIR.parent / "frontend" / "dist"))
@@ -18,9 +17,7 @@ def env_list(name: str, default: str) -> list[str]:
 
 ON_VERCEL = bool(os.environ.get("VERCEL"))
 DEBUG = env_bool("DJANGO_DEBUG", not ON_VERCEL)
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key" if DEBUG else "")
-if not SECRET_KEY:
-    raise ImproperlyConfigured("Set DJANGO_SECRET_KEY when DJANGO_DEBUG is false.")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY") or ("dev-only-insecure-key" if DEBUG else secrets.token_urlsafe(50))
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 if render_host := os.environ.get("RENDER_EXTERNAL_HOSTNAME"):

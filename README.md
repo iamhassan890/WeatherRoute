@@ -118,8 +118,9 @@ cd frontend && npm run typecheck
 **Vercel (live demo).** The React app is served as static files and the Django API runs as a Python function (`api/index.py`). `vercel.json` handles the build and sends `/api/*` to Django.
 
 1. Import the GitHub repo in Vercel, framework preset **Other**.
-2. Add the environment variable `DJANGO_SECRET_KEY` (any long random string).
-3. Deploy. Debug mode is turned off and `*.vercel.app` is allowed automatically when running on Vercel.
+2. Deploy. On Vercel, debug mode is turned off and `*.vercel.app` is allowed automatically.
+
+No environment variables are required. The API is stateless (no sessions, logins or signed data), so if `DJANGO_SECRET_KEY` is not set in production a random key is generated at startup.
 
 **Docker / Render.** The same code also runs as one Docker image, where Node builds the frontend and Django + Gunicorn serve both.
 
