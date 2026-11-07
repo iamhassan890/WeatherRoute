@@ -6,6 +6,7 @@ import { HeatTileLayer, type ScalarField } from './HeatTileLayer';
 
 const PANE = 'heatmap';
 const PANE_Z_INDEX = '350';
+const NEIGHBOURHOOD = 9;
 
 export function buildField(
   data: HeatmapResponse,
@@ -14,14 +15,37 @@ export function buildField(
   thresholds: Thresholds,
 ): ScalarField {
   const { rows, cols } = data.grid;
-  const values = new Float32Array(rows * cols).fill(NaN);
+  const measured = new Float32Array(rows * cols).fill(NaN);
   const frame = data.values[variable][hour];
   const bounds = variable === 'risk' ? null : thresholds[variable].bounds;
   data.cells.forEach(([r, c], i) => {
     const v = frame[i];
-    if (v != null) values[r * cols + c] = bounds ? severity(v, bounds) : v;
+    if (v != null) measured[r * cols + c] = bounds ? severity(v, bounds) : v;
   });
-  return { ...data.grid, values };
+
+  const values = new Float32Array(rows * cols).fill(NaN);
+  const coverage = new Float32Array(rows * cols);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      let sum = 0;
+      let count = 0;
+      for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+          const rr = r + dr;
+          const cc = c + dc;
+          if (rr < 0 || rr >= rows || cc < 0 || cc >= cols) continue;
+          const v = measured[rr * cols + cc];
+          if (Number.isNaN(v)) continue;
+          sum += v;
+          count++;
+        }
+      }
+      const i = r * cols + c;
+      coverage[i] = count / NEIGHBOURHOOD;
+      values[i] = Number.isNaN(measured[i]) ? (count ? sum / count : NaN) : measured[i];
+    }
+  }
+  return { ...data.grid, values, coverage };
 }
 
 interface Props {

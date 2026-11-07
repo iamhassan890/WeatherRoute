@@ -44,7 +44,7 @@ export function Legend({ variable, thresholds }: Props) {
       )}
       <div className="legend-routes">
         <span>
-          <i className="line selected" /> Selected
+          <i className="line selected" /> Selected (coloured by risk)
         </span>
         <span>
           <i className="line alt" /> Alternative

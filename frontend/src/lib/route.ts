@@ -1,6 +1,13 @@
-import type { RouteOption } from '../types';
+import type { RiskLevel, RouteOption } from '../types';
 
 type Point = [number, number];
+
+export interface RiskSegment {
+  risk: RiskLevel | null;
+  positions: Point[];
+}
+
+const EARTH_RADIUS_MI = 3958.8;
 
 const LABEL_CANDIDATES = 80;
 const OTHER_ROUTE_SAMPLES = 150;
@@ -51,4 +58,45 @@ export function labelAnchor(route: RouteOption, others: RouteOption[]): Point {
     }
   }
   return best;
+}
+
+function haversineMi([lat1, lon1]: Point, [lat2, lon2]: Point): number {
+  const rad = Math.PI / 180;
+  const dLat = (lat2 - lat1) * rad;
+  const dLon = (lon2 - lon1) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * EARTH_RADIUS_MI * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+export function checkpointEnds(route: RouteOption): number[] {
+  let mile = 0;
+  return route.checkpoints.map((cp) => (mile += cp.segment_mi));
+}
+
+export function riskSegments(route: RouteOption): RiskSegment[] {
+  const g = route.geometry;
+  const cumulative = [0];
+  for (let i = 1; i < g.length; i++) cumulative.push(cumulative[i - 1] + haversineMi(g[i - 1], g[i]));
+  const scale = cumulative[cumulative.length - 1] ? route.distance_mi / cumulative[cumulative.length - 1] : 1;
+
+  const ends = checkpointEnds(route);
+  const riskAtMile = (mile: number): RiskLevel | null => {
+    let lo = 0;
+    let hi = ends.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (ends[mid] < mile) lo = mid + 1;
+      else hi = mid;
+    }
+    return route.checkpoints[lo]?.risk ?? null;
+  };
+
+  const segments: RiskSegment[] = [];
+  for (let i = 0; i < g.length - 1; i++) {
+    const risk = riskAtMile(((cumulative[i] + cumulative[i + 1]) / 2) * scale);
+    const current = segments[segments.length - 1];
+    if (current && current.risk === risk) current.positions.push(g[i + 1]);
+    else segments.push({ risk, positions: [g[i], g[i + 1]] });
+  }
+  return segments;
 }

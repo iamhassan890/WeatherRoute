@@ -15,8 +15,9 @@ Walkthrough video: _TBD_
 - Weather checked at every checkpoint for the truck's ETA there
 - Risk per checkpoint using the wind/rain/snow table and the load rules
 - Recommended route with a one-line reason (for example _"Fewest Severe miles: 0 mi vs 42 mi on Route B."_)
-- Map with all routes, summary labels, colour-coded checkpoints with ETAs and conditions
-- Weather heatmap over the trip corridor with a 0-48 hour forecast slider (risk, wind, rain or snow), plus a truck marker showing where the truck is at that hour
+- Map with all routes and summary labels; the selected route is drawn in risk colours along its length, with colour-coded checkpoints showing ETA and conditions
+- "Conditions along the route" chart: wind, rain and snow at each checkpoint's ETA with risk bands and threshold lines; hover for details, click to fly the map there
+- Weather heatmap over the trip corridor (soft-edged, interpolated) with a 0-48 hour forecast slider (risk, wind, rain or snow), plus a truck marker showing where the truck is at that hour
 
 No API keys are needed. I used [OSRM](https://project-osrm.org/) for routing, [Open-Meteo](https://open-meteo.com/) for weather and [Photon](https://photon.komoot.io/) (with Nominatim as a fallback) for geocoding.
 

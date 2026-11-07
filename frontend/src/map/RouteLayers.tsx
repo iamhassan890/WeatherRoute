@@ -3,13 +3,13 @@ import { memo, useMemo } from 'react';
 import { CircleMarker, Marker, Polyline, Tooltip } from 'react-leaflet';
 import { DIGITS, formatDuration, formatMiles, formatTime, formatValue } from '../lib/format';
 import { riskColor, riskLabel } from '../lib/risk';
-import { labelAnchor } from '../lib/route';
+import { labelAnchor, riskSegments } from '../lib/route';
 import type { Checkpoint, RouteOption } from '../types';
 
 const ALT_STYLE = { color: '#94a3b8', weight: 4, opacity: 0.55 };
-const GLOW_STYLE = { color: '#38bdf8', weight: 16, opacity: 0.18 };
-const CASING_STYLE = { color: '#0b1120', weight: 8, opacity: 0.85 };
-const SELECTED_STYLE = { color: '#38bdf8', weight: 4.5, opacity: 1 };
+const GLOW_STYLE = { color: '#38bdf8', weight: 18, opacity: 0.2 };
+const CASING_STYLE = { color: '#0b1120', weight: 9, opacity: 0.9 };
+const SEGMENT_WEIGHT = 5;
 const MARKER_OUTLINE = '#0b1120';
 const CHECKPOINT_RADIUS = 5;
 const HAZARD_CHECKPOINT_RADIUS = 7;
@@ -63,6 +63,8 @@ export const RouteLayers = memo(function RouteLayers({ routes, selectedId, onSel
   const selected = routes.find((r) => r.id === selectedId);
   const others = routes.filter((r) => r.id !== selectedId);
 
+  const selectedSegments = useMemo(() => (selected ? riskSegments(selected) : []), [selected]);
+
   const labelPositions = useMemo(
     () => new Map(routes.map((route) => [route.id, labelAnchor(route, routes.filter((o) => o.id !== route.id))])),
     [routes],
@@ -103,7 +105,14 @@ export const RouteLayers = memo(function RouteLayers({ routes, selectedId, onSel
         <>
           <Polyline key={`glow-${selected.id}`} positions={selected.geometry} pathOptions={GLOW_STYLE} interactive={false} />
           <Polyline key={`casing-${selected.id}`} positions={selected.geometry} pathOptions={CASING_STYLE} interactive={false} />
-          <Polyline key={`sel-${selected.id}`} positions={selected.geometry} pathOptions={SELECTED_STYLE} interactive={false} />
+          {selectedSegments.map((segment, i) => (
+            <Polyline
+              key={`sel-${selected.id}-${i}`}
+              positions={segment.positions}
+              pathOptions={{ color: riskColor(segment.risk), weight: SEGMENT_WEIGHT, opacity: 1, lineCap: 'round' }}
+              interactive={false}
+            />
+          ))}
           {selected.checkpoints.map((cp) => (
             <CircleMarker
               key={`${selected.id}-${cp.mile}`}

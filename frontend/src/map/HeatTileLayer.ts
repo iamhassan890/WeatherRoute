@@ -9,13 +9,17 @@ export interface ScalarField {
   rows: number;
   cols: number;
   values: Float32Array;
+  coverage: Float32Array;
 }
 
 const SAMPLES_PER_TILE = 64;
 const RAMP_SIZE = 256;
 const RAMP = buildColorRamp(RAMP_SIZE);
-const MIN_COVERAGE = 0.02;
-const EDGE_FADE = 1.6;
+const MIN_WEIGHT = 0.02;
+const MIN_FADE = 0.01;
+const COVERAGE_GAIN = 1.25;
+
+const smoothstep = (t: number) => t * t * (3 - 2 * t);
 
 type TileRecord = { el: HTMLCanvasElement; coords: L.Coords };
 
@@ -70,10 +74,13 @@ export class HeatTileLayer extends L.GridLayer {
       lats[i] = map.unproject([originX, originY + offset], coords.z).lat;
     }
 
-    const { rows, cols, values } = field;
+    const { rows, cols, values, coverage } = field;
     let sum = 0;
     let weight = 0;
-    const add = (value: number, w: number) => {
+    let covered = 0;
+    const add = (index: number, w: number) => {
+      covered += coverage[index] * w;
+      const value = values[index];
       if (!Number.isNaN(value)) {
         sum += value * w;
         weight += w;
@@ -100,11 +107,14 @@ export class HeatTileLayer extends L.GridLayer {
 
         sum = 0;
         weight = 0;
-        add(values[r0 * cols + c0], (1 - tr) * (1 - tc));
-        add(values[r0 * cols + c1], (1 - tr) * tc);
-        add(values[r1 * cols + c0], tr * (1 - tc));
-        add(values[r1 * cols + c1], tr * tc);
-        if (weight < MIN_COVERAGE) continue;
+        covered = 0;
+        add(r0 * cols + c0, (1 - tr) * (1 - tc));
+        add(r0 * cols + c1, (1 - tr) * tc);
+        add(r1 * cols + c0, tr * (1 - tc));
+        add(r1 * cols + c1, tr * tc);
+        if (weight < MIN_WEIGHT) continue;
+        const fade = smoothstep(Math.min(1, covered * COVERAGE_GAIN));
+        if (fade < MIN_FADE) continue;
 
         const value = Math.min(Math.max(sum / weight, 0), MAX_RISK);
         const color = Math.round((value / MAX_RISK) * (RAMP_SIZE - 1)) * 4;
@@ -112,7 +122,7 @@ export class HeatTileLayer extends L.GridLayer {
         pixels[o] = RAMP[color];
         pixels[o + 1] = RAMP[color + 1];
         pixels[o + 2] = RAMP[color + 2];
-        pixels[o + 3] = RAMP[color + 3] * Math.min(1, weight * EDGE_FADE);
+        pixels[o + 3] = RAMP[color + 3] * fade;
         painted = true;
       }
     }

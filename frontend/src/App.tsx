@@ -5,6 +5,7 @@ import { CloudIcon, RouteIcon, ScaleIcon, TruckIcon } from './components/icons';
 import { Legend } from './components/Legend';
 import { Recommendation } from './components/Recommendation';
 import { RouteCard } from './components/RouteCard';
+import { RouteProfile } from './components/RouteProfile';
 import { TimeControls } from './components/TimeControls';
 import { TripForm } from './components/TripForm';
 import { formatDateTime } from './lib/format';
@@ -161,6 +162,7 @@ export default function App() {
                 />
               ))}
             </section>
+            {selected && <RouteProfile route={selected} thresholds={plan.thresholds} focus={focus} onFocus={setFocus} />}
             {selected && <CheckpointTable route={selected} intervalMi={plan.request.interval_mi} onFocus={setFocus} />}
           </>
         ) : planning ? (
