@@ -2,8 +2,7 @@
 
 Weather-aware truck routing. A React + Django app that helps a truck driver pick the safest route between two places, based on the weather forecast at the time the truck will actually reach each part of the route, the load weight, and travel time.
 
-Live demo: _TBD_
-Walkthrough video: _TBD_
+**Live demo:** [weather-route-five.vercel.app](https://weather-route-five.vercel.app)
 
 ![Screenshot](docs/screenshot.png)
 
